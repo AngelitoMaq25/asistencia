@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asistencias y certificados — Diseño con Canva</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="login-screen" class="login-split-screen">
+  <div class="login-banner">
+    <div class="login-banner-content">
+      <div class="brand-logo">🎓</div>
+      <h1>Diseño con Canva</h1>
+      <p>Plataforma de gestión académica, asistencia y certificaciones.</p>
+      <div class="banner-features">
+        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Control de Asistencias</span>
+        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Calificación de Participaciones</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="login-form-section">
+    <div class="login-card">
+      <div class="login-header">
+        <h2>Bienvenido</h2>
+        <p>Ingresa tu correo para ver tus notas</p>
+      </div>
+      
+      <form onsubmit="hacerLogin(event)" class="login-form">
+        <div class="input-group">
+          <label for="login-correo">Correo institucional o Usuario</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <input type="text" id="login-correo" placeholder="ejemplo@uss.edu.pe" required autocomplete="off">
+          </div>
+        </div>
+        
+        <div id="login-error" class="login-error"></div>
+        
+        <button type="submit" class="btn-login">
+          Ingresar al portal
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </button>
+      </form>
+      
+      <div class="login-footer">
+        <p>© 2026 Centro de Informática. Solo personal autorizado.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="app-screen" style="display: none;">
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="logo">📊</div>
+      <div>
+        <h1>Control de estudiantes</h1>
+        <p>Asistencia, participación y certificados Cisco</p>
+      </div>
+    </div>
+    <div class="topbar-right"></div>
+  </header>
+
+  <main id="app"></main>
+
+  <div id="modal-estudiante" class="modal-overlay" onclick="if(event.target===this)cerrarModalEstudiante()">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>➕ Agregar nuevo estudiante</h2>
+        <button class="modal-close" onclick="cerrarModalEstudiante()">×</button>
+      </div>
+      <form id="form-estudiante" onsubmit="guardarEstudiante(event)">
+        <div class="form-row">
+          <label for="f-nombre">Nombres</label>
+          <input type="text" id="f-nombre" required placeholder="Ej: MARIA FERNANDA">
+        </div>
+        <div class="form-row">
+          <label for="f-apellidos">Apellidos</label>
+          <input type="text" id="f-apellidos" required placeholder="Ej: PEREZ GOMEZ">
+        </div>
+        <div class="form-row">
+          <label for="f-correo">Correo institucional</label>
+          <input type="email" id="f-correo" required placeholder="ejemplo@uss.edu.pe">
+        </div>
+        <div class="form-row">
+          <label for="f-grupo">Grupo</label>
+          <select id="f-grupo" required>
+            <option value="">— Selecciona —</option>
+            <option value="1">PEAD-k</option>
+            <option value="2">PEAD-m</option>
+          </select>
+        </div>
+        <div id="form-error" class="form-error"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancelar" onclick="cerrarModalEstudiante()">Cancelar</button>
+          <button type="submit" class="btn-guardar">Guardar estudiante</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
