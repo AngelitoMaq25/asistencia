@@ -35,12 +35,31 @@ app.post('/api/login', async (req, res) => {
       return res.json({ ok: true, rol: 'admin', nombre: 'Docente' });
     }
 
-    const snapshot = await db.ref('estudiantes').orderByChild('correo').equalTo(input).once('value');
-    if (snapshot.exists()) {
-      const data = snapshot.val();
-      const id = Object.keys(data)[0];
-      const estudiante = { id, ...data[id] };
-      return res.json({ ok: true, rol: 'estudiante', estudiante });
+    // 1. Traemos TODOS los estudiantes de Firebase
+    const snapshot = await db.ref('estudiantes').once('value');
+    const estudiantesData = snapshot.val() || {};
+    
+    let estudianteEncontrado = null;
+    let idEncontrado = null;
+
+    // 2. Buscamos manualmente comparando en minúsculas
+    for (const id in estudiantesData) {
+      const est = estudiantesData[id];
+      // Si el correo de Firebase (en minúsculas) coincide con lo que escribió el usuario
+      if (est.correo && est.correo.toLowerCase() === input) {
+        estudianteEncontrado = est;
+        idEncontrado = id;
+        break; // Lo encontramos, dejamos de buscar
+      }
+    }
+
+    // 3. Si lo encontramos, devolvemos sus datos
+    if (estudianteEncontrado) {
+      return res.json({ 
+        ok: true, 
+        rol: 'estudiante', 
+        estudiante: { id: idEncontrado, ...estudianteEncontrado } 
+      });
     }
 
     return res.status(404).json({ error: 'Correo no registrado en el sistema' });
