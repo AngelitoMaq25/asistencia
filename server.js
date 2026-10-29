@@ -220,9 +220,10 @@ app.post('/api/estudiantes', async (req, res) => {
 });
 
 // ==================== SISTEMA DE MENSAJES ====================
+
+// Estudiante envía mensaje al docente
 app.post('/api/mensajes', async (req, res) => {
   try {
-    // 🟢 AHORA SÍ RECIBIMOS Y GUARDAMOS EL GRUPO
     const { estudiante_id, nombre, grupo, mensaje, tipo } = req.body;
     const ref = db.ref('mensajes').push();
     await ref.set({
@@ -232,12 +233,14 @@ app.post('/api/mensajes', async (req, res) => {
       mensaje,
       tipo,
       fecha: new Date().toISOString(),
-      leido: false
+      leido: false,
+      respuesta_docente: null // 🟢 Nuevo campo para guardar tu respuesta
     });
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Docente obtiene todos los mensajes
 app.get('/api/mensajes', async (req, res) => {
   try {
     const snapshot = await db.ref('mensajes').orderByChild('fecha').once('value');
@@ -247,11 +250,32 @@ app.get('/api/mensajes', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Docente marca como leído
 app.post('/api/mensajes/leer', async (req, res) => {
   try {
     const { id } = req.body;
     await db.ref(`mensajes/${id}`).update({ leido: true });
     res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// 🟢 Docente responde
+app.post('/api/mensajes/responder', async (req, res) => {
+  try {
+    const { id, respuesta } = req.body;
+    await db.ref(`mensajes/${id}`).update({ respuesta_docente: respuesta });
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// 🟢 Estudiante ve sus mensajes y respuestas
+app.get('/api/estudiante/:id/mensajes', async (req, res) => {
+  try {
+    const estudianteId = req.params.id;
+    const snapshot = await db.ref('mensajes').orderByChild('estudiante_id').equalTo(estudianteId).once('value');
+    const data = snapshot.val() || {};
+    const mensajes = Object.keys(data).map(id => ({ id, ...data[id] })).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    res.json(mensajes);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

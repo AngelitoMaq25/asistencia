@@ -18,7 +18,7 @@ const META_ASISTENCIA_PCT = 80;
 const META_PARTICIPACION_PCT = 80;
 const PTS_POR_SESION = 5;
 
-// ==================== LÓGICA DE LOGIN Y VISTA ESTUDIANTE ====================
+// ==================== LÓGICA DE LOGIN ====================
 
 async function hacerLogin(ev) {
   ev.preventDefault();
@@ -52,7 +52,6 @@ async function hacerLogin(ev) {
         <button class="btn-cancelar" onclick="abrirBandejaEntrada()" style="margin-left: 10px; position: relative;">📥 Mensajes <span id="badge-mensajes" style="display: none; position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; font-weight: bold;">0</span></button>
         <button class="btn-cancelar" style="margin-left: 10px;" onclick="cerrarSesion()">Salir</button>
       `;
-      // Cargar mensajes cada 30 segundos
       cargarMensajesAdmin();
       setInterval(cargarMensajesAdmin, 30000); 
     } else {
@@ -70,6 +69,8 @@ function cerrarSesion() {
   sesionActual = null;
   location.reload();
 }
+
+// ==================== VISTA ESTUDIANTE ====================
 
 async function cargarVistaEstudiante(id) {
   const res = await fetch(`/api/estudiante/${id}/notas`);
@@ -89,9 +90,15 @@ async function cargarVistaEstudiante(id) {
   app.innerHTML = `
     <div style="padding: 40px; max-width: 1100px; margin: 0 auto;">
       
-      <div style="text-align: center; margin-bottom: 40px;">
+      <div style="text-align: center; margin-bottom: 20px;">
         <h1 style="margin: 0; color: #0f172a;">Hola, ${data.estudiante.nombre.split(' ')[0]} 👋</h1>
         <p style="color: #64748b; margin-top: 8px; font-size: 16px;">Este es tu panel personal. Aquí puedes revisar qué te falta para terminar el curso.</p>
+      </div>
+
+      <div style="text-align: center; margin-bottom: 40px;">
+        <button onclick="abrirMisMensajes('${id}')" style="background: white; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; color: #334155; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+          📩 Ver mis mensajes y respuestas
+        </button>
       </div>
 
       ${certsFaltantes.length > 0 ? `
@@ -209,7 +216,6 @@ async function cargarVistaEstudiante(id) {
   `;
 }
 
-// Funciones para el modal de reclamo
 function abrirModalReclamo() {
   document.getElementById('modal-reclamo').style.display = 'flex';
   document.getElementById('reclamo-mensaje').value = '';
@@ -230,7 +236,6 @@ async function enviarReclamo(estudianteId) {
     return;
   }
 
-  // Obtenemos el nombre del grupo para enviarlo en el mensaje
   const nombreGrupo = sesionActual.estudiante.grupo_id == 1 ? 'PEAD-k' : 'PEAD-m';
 
   try {
@@ -240,7 +245,7 @@ async function enviarReclamo(estudianteId) {
       body: JSON.stringify({
         estudiante_id: estudianteId,
         nombre: sesionActual.estudiante.nombre + ' ' + sesionActual.estudiante.apellidos,
-        grupo: nombreGrupo, // 👈 AQUÍ ENVIAMOS EL GRUPO
+        grupo: nombreGrupo,
         mensaje: mensaje,
         tipo: tipo
       })
@@ -255,6 +260,53 @@ async function enviarReclamo(estudianteId) {
   } catch (e) {
     err.textContent = 'Error de conexión.';
   }
+}
+
+// ==================== VISTA DE MENSAJES DEL ESTUDIANTE ====================
+
+async function abrirMisMensajes(estudianteId) {
+  let modal = document.getElementById('modal-mis-mensajes');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-mis-mensajes';
+    modal.style = 'position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1002; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);';
+    modal.innerHTML = `
+      <div style="background: white; padding: 30px; border-radius: 20px; width: 100%; max-width: 600px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="margin: 0; color: #0f172a;">Mis mensajes</h2>
+          <button onclick="document.getElementById('modal-mis-mensajes').style.display='none'" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+        </div>
+        <div id="lista-mis-mensajes">Cargando...</div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+  
+  const res = await fetch(`/api/estudiante/${estudianteId}/mensajes`);
+  const mensajes = await res.json();
+  const contenedor = document.getElementById('lista-mis-mensajes');
+
+  if (mensajes.length === 0) {
+    contenedor.innerHTML = '<p style="text-align:center; color:#64748b;">No has enviado ningún mensaje aún.</p>';
+    return;
+  }
+
+  contenedor.innerHTML = mensajes.map(m => `
+    <div style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 15px; background: #f8fafc;">
+      <div style="font-size: 12px; color: #94a3b8; margin-bottom: 5px;">Tú enviaste: ${new Date(m.fecha).toLocaleString()}</div>
+      <p style="margin: 0 0 10px; font-size: 14px; color: #334155;">"${m.mensaje}"</p>
+      
+      ${m.respuesta_docente ? `
+        <div style="background: #e0e7ff; border-left: 4px solid #4f46e5; padding: 10px; border-radius: 0 8px 8px 0; margin-top: 10px;">
+          <div style="font-size: 12px; color: #3730a3; font-weight: bold; margin-bottom: 4px;">Respuesta del docente:</div>
+          <p style="margin: 0; font-size: 14px; color: #1e1b4b;">"${m.respuesta_docente}"</p>
+        </div>
+      ` : `
+        <div style="font-size: 12px; color: #d97706; font-style: italic; background: #fffbeb; padding: 8px; border-radius: 6px;">⏳ Esperando respuesta del docente...</div>
+      `}
+    </div>
+  `).join('');
 }
 
 // ==================== BANDEJA DE ENTRADA (ADMIN) ====================
@@ -319,7 +371,6 @@ function renderBandejaEntrada() {
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
         <div>
           <strong style="color: #1e293b; font-size: 15px;">${m.nombre}</strong>
-          <!-- Aquí mostramos el grupo con una etiqueta de color -->
           <span style="display: inline-block; margin-left: 8px; font-size: 11px; background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 10px; font-weight: 700;">
             ${m.grupo || 'Sin grupo'}
           </span>
@@ -331,6 +382,20 @@ function renderBandejaEntrada() {
 
       <p style="margin: 0 0 10px; font-size: 14px; color: #334155; line-height: 1.4;">"${m.mensaje}"</p>
       
+      <!-- 🟢 SECCIÓN DE RESPUESTA -->
+      <div style="background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #e2e8f0;">
+        ${m.respuesta_docente ? `
+          <div style="font-size: 12px; color: #64748b; margin-bottom: 4px; font-weight: 600;">Tu respuesta:</div>
+          <p style="margin: 0 0 8px; font-size: 13px; color: #1e293b;">"${m.respuesta_docente}"</p>
+          <button onclick="editarRespuesta('${m.id}', '${m.respuesta_docente.replace(/'/g, "\\'")}')" style="background: none; border: none; color: #4f46e5; font-size: 12px; font-weight: bold; cursor: pointer; padding: 0;">Editar respuesta</button>
+        ` : `
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="resp-${m.id}" placeholder="Escribe una respuesta..." style="flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; font-size: 13px;">
+            <button onclick="responderMensaje('${m.id}')" style="background: #4f46e5; color: white; border: none; border-radius: 6px; padding: 8px 15px; font-size: 13px; font-weight: bold; cursor: pointer;">Responder</button>
+          </div>
+        `}
+      </div>
+
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <span style="font-size: 12px; color: #94a3b8;">${new Date(m.fecha).toLocaleString()}</span>
         ${!m.leido ? `<button onclick="marcarMensajeLeido('${m.id}')" style="background: #10b981; color: white; border: none; border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: bold; cursor: pointer;">Marcar como leído</button>` : '<span style="color: #10b981; font-size: 12px; font-weight: bold;">✓ Leído</span>'}
@@ -350,6 +415,39 @@ async function marcarMensajeLeido(id) {
     cargarMensajesAdmin(); 
   } catch (e) {
     alert('Error al marcar como leído');
+  }
+}
+
+async function responderMensaje(id) {
+  const input = document.getElementById(`resp-${id}`);
+  const texto = input.value.trim();
+  if (!texto) return alert('Escribe una respuesta antes de enviar.');
+
+  try {
+    await fetch('/api/mensajes/responder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, respuesta: texto })
+    });
+    cargarMensajesAdmin();
+  } catch (e) {
+    alert('Error al responder');
+  }
+}
+
+async function editarRespuesta(id, textoActual) {
+  const nuevaRespuesta = prompt('Edita tu respuesta:', textoActual);
+  if (nuevaRespuesta === null || nuevaRespuesta.trim() === '') return;
+  
+  try {
+    await fetch('/api/mensajes/responder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, respuesta: nuevaRespuesta.trim() })
+    });
+    cargarMensajesAdmin();
+  } catch (e) {
+    alert('Error al editar la respuesta');
   }
 }
 
