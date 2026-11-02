@@ -245,8 +245,8 @@ main { padding: 30px 32px; max-width: 1600px; margin: 0 auto; }
 .lista-header,
 .fila {
   display: grid;
-  grid-template-columns: 50px minmax(220px, 1fr) 180px 130px 100px 100px 130px 110px;
-  gap: 12px;
+  grid-template-columns: 40px minmax(220px, 1fr) 160px 100px 90px 90px 80px 130px 80px;
+  gap: 10px;
   padding: 12px 18px;
   align-items: center;
 }
