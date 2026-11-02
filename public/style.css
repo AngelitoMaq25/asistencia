@@ -1193,3 +1193,16 @@ main { padding: 30px 32px; max-width: 1600px; margin: 0 auto; }
     display: flex;
   }
 }
+
+.nota-final {
+  text-align: center;
+  font-size: 15px;
+  color: #4f46e5;
+  background: #eef2ff;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid #c7d2fe;
+}
+.nota-final strong {
+  font-weight: 800;
+}

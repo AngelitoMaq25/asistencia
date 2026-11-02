@@ -81,6 +81,10 @@ async function cargarVistaEstudiante(id) {
   const asistenciasValidas = data.asistencias.filter(a => a.estado === 'presente' || a.estado === 'tarde').length;
   const participacionObtenida = data.participaciones.reduce((sum, p) => sum + p.puntaje, 0);
   
+  // 🟢 CÁLCULO DE LA NOTA (0-20)
+  const participacionMax = totalSes * PTS_POR_SESION;
+  const notaParticipacion = participacionMax > 0 ? ((participacionObtenida / participacionMax) * 20).toFixed(1) : '0.0';
+
   const certsSubidos = data.certificados.filter(c => c.subido === 1);
   const cert1 = certsSubidos.some(c => c.certificado_numero === 1);
   const cert2 = certsSubidos.some(c => c.certificado_numero === 2);
@@ -126,10 +130,14 @@ async function cargarVistaEstudiante(id) {
           </div>
         </div>
 
-        <div class="stat" style="text-align: left; padding: 24px; border-radius: 16px; background: white; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-          <div class="stat-label" style="font-size: 14px; font-weight: 600; color: #64748b;">Mis Puntos</div>
-          <div class="stat-value" style="font-size: 32px; font-weight: 800; color: #16a34a; margin-top: 8px;">
-            ${participacionObtenida} <small style="font-size: 16px; font-weight: 500; color: #64748b;">pts</small>
+        <!-- 🟢 TARJETA DE NOTA ACTUALIZADA -->
+        <div class="stat" style="text-align: left; padding: 24px; border-radius: 16px; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #86efac; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+          <div class="stat-label" style="font-size: 14px; font-weight: 700; color: #065f46;">Nota de Participación</div>
+          <div class="stat-value" style="font-size: 38px; font-weight: 900; color: #15803d; margin-top: 8px;">
+            ${notaParticipacion} <small style="font-size: 18px; font-weight: 600; color: #166534;">/ 20</small>
+          </div>
+          <div style="font-size: 13px; color: #166534; margin-top: 8px; font-weight: 500;">
+            (${participacionObtenida} de ${participacionMax} pts acumulados)
           </div>
         </div>
 
@@ -382,7 +390,6 @@ function renderBandejaEntrada() {
 
       <p style="margin: 0 0 10px; font-size: 14px; color: #334155; line-height: 1.4;">"${m.mensaje}"</p>
       
-      <!-- 🟢 SECCIÓN DE RESPUESTA -->
       <div style="background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #e2e8f0;">
         ${m.respuesta_docente ? `
           <div style="font-size: 12px; color: #64748b; margin-bottom: 4px; font-weight: 600;">Tu respuesta:</div>
@@ -738,15 +745,17 @@ function render() {
       </div>
       <div class="tabla-scroll">
         <table class="tabla-modulo">
-          <thead><tr><th>#</th><th>Estudiante</th><th>Correo</th><th>Asistencia</th><th>Participación</th><th>Estado</th></tr></thead>
+          <thead><tr><th>#</th><th>Estudiante</th><th>Correo</th><th>Asistencia</th><th>Participación</th><th>Nota (0-20)</th><th>Estado</th></tr></thead>
           <tbody>
-            ${estudiantes.length === 0 ? '<tr><td colspan="6" class="tabla-vacia">Aún no hay estudiantes registrados.</td></tr>' : estudiantes.map((e, i) => `
+            ${estudiantes.length === 0 ? '<tr><td colspan="7" class="tabla-vacia">Aún no hay estudiantes registrados.</td></tr>' : estudiantes.map((e, i) => `
               <tr>
                 <td>${i + 1}</td>
                 <td><strong>${e.apellidos}, ${e.nombre}</strong></td>
                 <td>${e.correo}</td>
                 <td>${e.presentes + e.tardes}/${totalSes}</td>
                 <td>${e.puntaje_total || 0}/${maxPts} pts</td>
+                <!-- 🟢 COLUMNA DE NOTA AGREGADA -->
+                <td><strong style="color: #4f46e5;">${maxPts > 0 ? (((e.puntaje_total || 0) / maxPts) * 20).toFixed(1) : '0.0'}</strong></td>
                 <td><span class="badge ${e.aprueba ? 'ok' : 'mal'}">${e.aprueba ? 'APRUEBA' : 'EN RIESGO'}</span></td>
               </tr>
             `).join('')}
@@ -850,6 +859,7 @@ function render() {
         <div>Pts. sesión (0-${PTS_POR_SESION})</div>
         <div style="text-align:center">Asistencias</div>
         <div style="text-align:center">Pts. acumulados</div>
+        <div style="text-align:center">Nota (0-20)</div>
         <div style="text-align:center">Estado</div>
         <div style="text-align:center">Participación</div>
       </div>
@@ -905,6 +915,10 @@ function render() {
             <div class="mini-badge ${claseBadgePart}" data-part-badge
                  title="Puntaje acumulado: ${ptsTot} de ${maxPts} pts (meta: ${metaPart})">
               ${ptsTot}/${maxPts}
+            </div>
+            <!-- 🟢 NUEVA COLUMNA EN LA TABLA DE ASISTENCIA -->
+            <div class="nota-final" data-nota-badge>
+              <strong>${((ptsTot / maxPts) * 20).toFixed(1)}</strong>
             </div>
             <div class="estado-final" data-estado>
               <span class="badge ${aprueba ? 'ok' : 'mal'}">
@@ -1124,6 +1138,11 @@ function recalcularEstudiante(estudiante_id) {
       bAvance.className = `avance-estudiante ${avance.porcentaje === 100 ? 'completo' : ''}`;
       bAvance.innerHTML = `<strong>${avance.porcentaje}%</strong>`;
       bAvance.title = `Participación en todo el curso: ${avance.porcentaje}% del componente`;
+    }
+    // 🟢 ACTUALIZAR LA NOTA EN TIEMPO REAL
+    const bNota = fila.querySelector('[data-nota-badge]');
+    if (bNota) {
+      bNota.innerHTML = `<strong>${((totalPuntos / maxPts) * 20).toFixed(1)}</strong>`;
     }
     const bEstado = fila.querySelector('[data-estado] .badge');
     if (bEstado) {
