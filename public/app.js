@@ -862,6 +862,7 @@ function render() {
         <div style="text-align:center">Nota (0-20)</div>
         <div style="text-align:center">Estado</div>
         <div style="text-align:center">Participación</div>
+        <div></div>
       </div>
       ${visibles.length === 0 ? `
         <div class="sin-resultados">
@@ -929,6 +930,17 @@ function render() {
                  data-avance-badge
                  title="Participación en todo el curso: ${avance.porcentaje}% del componente (meta: ${metaPart}/${maxPts} pts)">
               <strong>${avance.porcentaje}%</strong>
+            </div>
+                        <div class="avance-estudiante ${avance.porcentaje === 100 ? 'completo' : ''}"
+                 data-avance-badge
+                 title="Participación en todo el curso: ${avance.porcentaje}% del componente (meta: ${metaPart}/${maxPts} pts)">
+              <strong>${avance.porcentaje}%</strong>
+            </div>
+            <!-- 🟢 BOTÓN DE ELIMINAR -->
+            <div style="text-align: center;">
+              <button onclick="eliminarEstudiante(${e.id}, '${e.nombre} ${e.apellidos}')" style="background: none; border: none; cursor: pointer; font-size: 18px; color: #ef4444; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'" title="Eliminar estudiante">
+                🗑️
+              </button>
             </div>
           </div>
         `;
@@ -1241,3 +1253,22 @@ async function guardarEstudiante(ev) {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') cerrarModalEstudiante();
 });
+
+async function eliminarEstudiante(id, nombreCompleto) {
+  const confirmacion = confirm(`¿Estás seguro de que deseas eliminar a ${nombreCompleto}? Esta acción no se puede deshacer.`);
+  
+  if (!confirmacion) return; 
+
+  try {
+    const res = await fetch(`/api/estudiantes/${id}`, { method: 'DELETE' });
+    
+    if (!res.ok) throw new Error('Error al eliminar');
+
+    toast('✓ Estudiante eliminado correctamente', 'success');
+    await recargar(); 
+    render();         
+    
+  } catch (err) {
+    toast(`✗ ${err.message}`, 'error');
+  }
+}

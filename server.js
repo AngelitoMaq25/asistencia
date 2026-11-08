@@ -282,3 +282,18 @@ app.get('/api/estudiante/:id/mensajes', async (req, res) => {
 app.listen(port, () => {
   console.log(`✅ Servidor conectado a Firebase Realtime Database en http://localhost:${port}`);
 });
+
+// 🟢 NUEVA RUTA PARA ELIMINAR ESTUDIANTE
+app.delete('/api/estudiantes/:id', async (req, res) => {
+  try {
+    const estudianteId = req.params.id;
+    
+    // Eliminamos al estudiante de Firebase usando su ID
+    await db.ref(`estudiantes/${estudianteId}`).remove();
+    
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
